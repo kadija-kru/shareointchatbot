@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import List
 
 from llama_index.core import Settings, VectorStoreIndex
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.response_synthesizers import get_response_synthesizer
@@ -20,19 +21,33 @@ from llama_index.llms.ollama import Ollama
 
 logger = logging.getLogger(__name__)
 
-_GROUNDED_SYSTEM_PROMPT = (
-    "You are a helpful SharePoint knowledge assistant for Contoso Corporation. "
-    "Answer the user's question using ONLY the information provided in the context below. "
+# Prompt templates embed the grounding instructions directly so they work
+# regardless of whether the underlying LLM supports a separate system prompt.
+_GROUNDED_QA_TMPL = (
+    "You are a helpful SharePoint knowledge assistant for Contoso Corporation.\n"
+    "Answer the user's question using ONLY the information provided in the context below.\n"
     "If the context does not contain enough information to answer the question, "
-    "say: 'I could not find a definitive answer in the available documents. "
-    "Please consult the source documents or contact the relevant team.' "
-    "Always cite the document titles you used."
+    "respond with: 'I could not find a definitive answer in the available documents. "
+    "Please consult the source documents or contact the relevant team.'\n"
+    "Always cite the document titles you used.\n\n"
+    "Context information:\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Query: {query_str}\n"
+    "Answer:"
 )
 
-_OPEN_SYSTEM_PROMPT = (
-    "You are a helpful SharePoint knowledge assistant for Contoso Corporation. "
+_OPEN_QA_TMPL = (
+    "You are a helpful SharePoint knowledge assistant for Contoso Corporation.\n"
     "Answer the user's question using the context provided. "
-    "If you are unsure, say so and suggest consulting the source documents."
+    "If you are unsure, say so and suggest consulting the source documents.\n\n"
+    "Context information:\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Query: {query_str}\n"
+    "Answer:"
 )
 
 
@@ -64,12 +79,18 @@ def build_query_engine(index: VectorStoreIndex) -> RetrieverQueryEngine:
         model=ollama_model,
         base_url=ollama_base_url,
         request_timeout=120.0,
-        system_prompt=_GROUNDED_SYSTEM_PROMPT if strict_grounded else _OPEN_SYSTEM_PROMPT,
+        context_window=4096,
     )
     Settings.llm = llm
 
+    qa_template = PromptTemplate(
+        _GROUNDED_QA_TMPL if strict_grounded else _OPEN_QA_TMPL
+    )
+
     retriever = VectorIndexRetriever(index=index, similarity_top_k=top_k)
-    response_synthesizer = get_response_synthesizer()
+    response_synthesizer = get_response_synthesizer(
+        text_qa_template=qa_template,
+    )
 
     engine = RetrieverQueryEngine(
         retriever=retriever,
