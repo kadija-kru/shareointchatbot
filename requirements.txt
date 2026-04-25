@@ -1,0 +1,20 @@
+# Core framework
+streamlit==1.35.0
+
+# LlamaIndex ecosystem
+llama-index-core==0.14.21
+llama-index-embeddings-huggingface==0.7.0
+llama-index-vector-stores-faiss==0.6.0
+llama-index-llms-ollama==0.10.1
+
+# FAISS (CPU-only; no GPU required)
+faiss-cpu==1.8.0
+
+# Embeddings
+sentence-transformers==3.4.1
+torch==2.6.0
+transformers==4.48.0
+
+# HTTP
+httpx==0.27.0
+requests==2.32.3

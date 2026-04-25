@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env.local
+
+# Environment (keep .env.example, ignore the real .env)
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Docker build artifacts
+*.log
+
+# FAISS index (built at runtime, stored in Docker volume)
+.index/
+
+# HuggingFace model cache (downloaded at runtime)
+.cache/
